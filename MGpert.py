@@ -1,10 +1,8 @@
 from __future__ import division
 import math, random
 import numpy as np
-# from numpy.random import uniform, seed
 from scipy import integrate
 from scipy.integrate import quad
-from matplotlib import pyplot as plt
 from copy import deepcopy
 
 
@@ -24,27 +22,17 @@ class MGpert():
 	# This is where the LCDM simulation is stored
 	LCDM = 0
 
-	# # LCDM datapoints
-	# dataPoints = [{ 'z': 0.067, 'f': 0.42, 'e': 0.06}, { 'z': 0.17, 'f': 0.51, 'e': 0.06}, { 'z': 0.22, 'f': 0.42, 'e': 0.07},
-	# 			  { 'z': 0.25, 'f': 0.35, 'e': 0.06 }, { 'z': 0.37, 'f': 0.46, 'e': 0.04}, { 'z': 0.41, 'f': 0.45, 'e': 0.04},
-	# 			  { 'z': 0.57, 'f': 0.43, 'e': 0.03 }, { 'z': 0.6,  'f': 0.43, 'e': 0.04}, { 'z': 0.78, 'f': 0.38, 'e': 0.04}]
-
-	# # # from planck
-	# dataPoints = [{ 'z': 0.067, 'f': 0.423, 'e': 0.055}, { 'z': 0.15, 'f': 0.49, 'e': 0.15}, { 'z': 0.3, 'f': 0.49, 'e': 0.08},
-	# 			  { 'z': 0.44, 'f': 0.413, 'e': 0.08 }, { 'z': 0.57, 'f': 0.447, 'e': 0.028}, { 'z': 0.6, 'f': 0.39, 'e': 0.063},
-	# 			  { 'z': 0.73, 'f': 0.437, 'e': 0.072 }, { 'z': 0.8,  'f': 0.47, 'e': 0.08}]
-
 	# fsigma8 data points
 	dataPoints = [{ 'z': 0.067, 'f': 0.423, 'e': 0.055}, { 'z': 0.17, 'f': 0.51, 'e': 0.06},
-				 { 'z': 0.22, 'f': 0.42, 'e': 0.07}, { 'z': 0.25, 'f': 0.39, 'e': 0.05}, { 'z': 0.37, 'f': 0.4302, 'e': 0.0378},
-				 { 'z': 0.41, 'f': 0.45, 'e': 0.04}, { 'z': 0.57, 'f': 0.43, 'e': 0.03 }, { 'z': 0.6,  'f': 0.43, 'e': 0.04},
+				 { 'z': 0.22, 'f': 0.42, 'e': 0.07}, { 'z': 0.25, 'f': 0.39, 'e': 0.05}, 
+				 { 'z': 0.37, 'f': 0.4302, 'e': 0.0378}, { 'z': 0.41, 'f': 0.45, 'e': 0.04},
+				 { 'z': 0.57, 'f': 0.43, 'e': 0.03 }, { 'z': 0.6,  'f': 0.43, 'e': 0.04},
 				 { 'z': 0.78, 'f': 0.38, 'e': 0.04}, { 'z': 0.8,  'f': 0.47, 'e': 0.08}]
 
 	# constructor default is LCDM
-	def __init__(self, mu0 = 0, alpha_t0 = 0 , alpha_b0 = 0 , q0 = 0):
+	def __init__(self, alpha_t0 = 0 , alpha_b0 = 0 , q0 = 0):
 
 		# mandatory variables
-		self.mu0 = mu0
 		self.alpha_t0 = alpha_t0
 		self.alpha_b0 = alpha_b0
 		self.q0 = q0
@@ -65,7 +53,7 @@ class MGpert():
 			MGpert.LCDM = 1
 			MGpert.LCDM = MGpert()
 			MGpert.LCDM.runSimulation()
-			#print 'hi 1'
+	
 
 		# Runs the integration
 		# Makes sure LCDM only runs once
@@ -199,7 +187,7 @@ class MGpert():
 			self.scalefactor.append( math.exp(self.X[i]) )
 
 			# In the case that this is not LCDM we need to normalise the values
-			if self.mu0 != 0 or self.alpha_t0 != 0 or self.alpha_b0 != 0 or self.q0 != 0:
+			if self.alpha_t0 != 0 or self.alpha_b0 != 0 or self.q0 != 0:
 				self.sigma8.append( self.delta[i] * MGpert.LCDM.sigma8[i] / MGpert.LCDM.delta[i])
 
 			# This is the LCDM case
@@ -214,44 +202,5 @@ class MGpert():
 			self.chiSquare(i)
 			
 	
-	# compute the error on a certain run - only used for LCDM fsimga8 
-	def error(self,d_Om, d_sigma8):
-		upper = []
-		lower = []
-		upperOm_error = deepcopy(self)
-		lowerOm_error =deepcopy(self)
-		uppersigma8_error = deepcopy(self)
-		lowersigma8_error = deepcopy(self)
-
-		upperOm = deepcopy(self)
-		lowerOm = deepcopy(self)
-		uppersigma8 = deepcopy(self)
-		lowersigma8 = deepcopy(self)
-
-		upperOm.omega_m += 0.0001 # d_Om
-		lowerOm.omega_m -=0.0001 #d_Om
-
-		for i in range(0,len(self.scalefactor)):
-			uppersigma8.sigma8[i] +=0.0001 #d_sigma8
-			lowersigma8.sigma8[i] -= 0.0001 #d_sigma8
-
-		upperOm.runSimulation()
-		lowerOm.runSimulation()
-		uppersigma8.runSimulation()
-		lowersigma8.runSimulation()
-
-		for i in range(0,len(self.scalefactor)):
-			upperOm_error.f_sigma8[i] = ((upperOm.f_sigma8[i] - self.f_sigma8[i] ) / 0.0001 ) **2 *d_Om**2
-			lowerOm_error.f_sigma8[i] = ((lowerOm.f_sigma8[i] - self.f_sigma8[i] ) / 0.0001 ) **2 *d_Om**2
-			uppersigma8_error.f_sigma8[i] = ((uppersigma8.f_sigma8[i] - self.f_sigma8[i]) / 0.0001) **2 *d_sigma8**2
-			lowersigma8_error.f_sigma8[i] = ((uppersigma8.f_sigma8[i] - self.f_sigma8[i] ) / 0.0001) **2 *d_sigma8**2
-
-
-			upper.append(upperOm.f_sigma8[i] + math.sqrt(upperOm_error.f_sigma8[i] + uppersigma8_error.f_sigma8[i] ))
-			lower.append(lowerOm.f_sigma8[i] - math.sqrt( lowerOm_error.f_sigma8[i] + lowersigma8_error.f_sigma8[i] )) 
-
-		return upper, lower
-
-
-
+	
 
